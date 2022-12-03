@@ -5,19 +5,32 @@
 /*----------------------
   Seccion definiciones
 ------------------------*/
-//Preambulo C
+// Preambulo C
 %{
 #include <stdio.h>
 #include <string.h>
 #include "header.h"
 %}
 
-//Declaraciones Bison
-%token ID_ CTE_ TRUE_ FALSE_
-%token IF_ ELSE_ FOR_ INT_ BOOL_ RETURN_ READ_ PRINT_
+%union{
+  int cent;
+  char *ident; 
+}
+
+// Declaraciones Bison
+%token IF_ ELSE_ FOR_ RETURN_
 %token ASIG_ OPIGUALDAD_ OPDESIGUALDAD_ OPMAYOR_ OPMENOR_ OPMAYORIGUAL_ OPMENORIGUAL_
 %token OPMAS_ OPMENOS_ OPMUL_ OPDIV_ OPAND_ OPOR_ OPNEGACION_
 %token APAR_ CPAR_ ACOR_ CCOR_ ALLAVE_ CLLAVE_ COMA_ PCOMA_
+
+// Para los terminales
+%token <cent> CTE_ TRUE_ FALSE_ INT_ BOOL_ READ_ PRINT_
+%token <*ident> ID_
+
+// Para los no-terminales
+%type <cent> const tipo_simple 
+%type <cent> expresion_opcional expresion expresion_logica expresion_igualdad expresion_relacional
+%type <cent> expresion_adicion expresion_multiplicativa expresion_unaria expresion_sufijo
 %%
 
 /*----------------------
@@ -100,27 +113,58 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                           | ID_ ALLAVE_ expresion CLLAVE_ ASIG_ expresion
                           ;
 
-          expresion_logica: expresion_igualdad
-                          | expresion_logica operador_logico expresion_igualdad
+          expresion_logica: expresion_igualdad { $$ = $1; }
+                          | expresion_logica operador_logico expresion_igualdad 
+                            { if ($1 == T_LOGICO && $3 == T_LOGICO) { $$ = T_LOGICO; }
+					                    else { $$ = T_ERROR; 
+                                    yyerror("Error. Los tipos (logicos) no coinciden."); 
+                                    $$ = T_ERROR;
+                                   }
+                            }
                           ;
 
-        expresion_igualdad: expresion_relacional
+        expresion_igualdad: expresion_relacional { $$ = $1; }
                           | expresion_igualdad operador_igualdad expresion_relacional
+                            { if (($1 == T_ENTERO && $3 == T_ENTERO) ||
+                                    ($1 == T_LOGICO && $3 == T_LOGICO)) { $$ = T_LOGICO; }
+                                else { $$ = T_ERROR; 
+                                      yyerror("Error. Los tipos (igualdad) no coinciden."); 
+                                      $$ = T_ERROR;
+                                    }
+                            }
                           ;
 
-      expresion_relacional: expresion_adicion
+      expresion_relacional: expresion_adicion { $$ = $1; }
                           | expresion_relacional operador_relacional expresion_adicion
+                            { if ($1 == T_ENTERO && $3 == T_ENTERO) { $$ = T_LOGICO; }
+                                else { $$ = T_ERROR; 
+                                      yyerror("Error. Los tipos (relacionales) no coinciden."); 
+                                      $$ = T_ERROR;
+                                    }
+                            }
                           ;
 
-         expresion_adicion: expresion_multiplicativa
+         expresion_adicion: expresion_multiplicativa { $$ = $1; }
                           | expresion_adicion operador_adicion expresion_multiplicativa
+                            { if ($1 == T_ENTERO && $3 == T_ENTERO) { $$ = T_LOGICO; }
+                                else { $$ = T_ERROR; 
+                                      yyerror("Error. Los tipos (adicionales) no coinciden."); 
+                                      $$ = T_ERROR;
+                                    }
+                            }
                           ;
 
-  expresion_multiplicativa: expresion_unaria
+  expresion_multiplicativa: expresion_unaria { $$ = $1; }
                           | expresion_multiplicativa operador_multiplicativo expresion_unaria
+                            { if ($1 == T_ENTERO && $3 == T_ENTERO) { $$ = T_LOGICO; }
+                                else { $$ = T_ERROR; 
+                                      yyerror("Error. Los tipos (multiplicativos) no coinciden."); 
+                                      $$ = T_ERROR;
+                                    }
+                            }
                           ;
 
-          expresion_unaria: expresion_sufijo
+          expresion_unaria: expresion_sufijo { $$ = $1; }
                           | operador_unario expresion_unaria
                           ;
 
@@ -136,7 +180,7 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                           ;
 
  lista_parametros_actuales: expresion
-                          | expresion COMA_ lista_parametros_actuales
+                          | expresion COMA_ lista_parametros_actuales 
                           ;
 
            operador_logico: OPAND_
