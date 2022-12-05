@@ -116,7 +116,7 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
           expresion_logica: expresion_igualdad { $$ = $1; }
                           | expresion_logica operador_logico expresion_igualdad 
                             { if ($1 == T_LOGICO && $3 == T_LOGICO) { $$ = T_LOGICO; }
-					                    else { $$ = T_ERROR; 
+					                    else {
                                     yyerror("Error. Los tipos (logicos) no coinciden."); 
                                     $$ = T_ERROR;
                                    }
@@ -127,7 +127,7 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                           | expresion_igualdad operador_igualdad expresion_relacional
                             { if (($1 == T_ENTERO && $3 == T_ENTERO) ||
                                     ($1 == T_LOGICO && $3 == T_LOGICO)) { $$ = T_LOGICO; }
-                                else { $$ = T_ERROR; 
+                                else { 
                                       yyerror("Error. Los tipos (igualdad) no coinciden."); 
                                       $$ = T_ERROR;
                                     }
@@ -137,7 +137,7 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
       expresion_relacional: expresion_adicion { $$ = $1; }
                           | expresion_relacional operador_relacional expresion_adicion
                             { if ($1 == T_ENTERO && $3 == T_ENTERO) { $$ = T_LOGICO; }
-                                else { $$ = T_ERROR; 
+                                else {
                                       yyerror("Error. Los tipos (relacionales) no coinciden."); 
                                       $$ = T_ERROR;
                                     }
@@ -147,40 +147,91 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
          expresion_adicion: expresion_multiplicativa { $$ = $1; }
                           | expresion_adicion operador_adicion expresion_multiplicativa
                             { if ($1 == T_ENTERO && $3 == T_ENTERO) { $$ = T_LOGICO; }
-                                else { $$ = T_ERROR; 
-                                      yyerror("Error. Los tipos (adicionales) no coinciden."); 
-                                      $$ = T_ERROR;
-                                    }
+                              else {
+                                yyerror("Error. Los tipos (adicionales) no coinciden."); 
+                                $$ = T_ERROR;
+                              }
                             }
                           ;
 
   expresion_multiplicativa: expresion_unaria { $$ = $1; }
                           | expresion_multiplicativa operador_multiplicativo expresion_unaria
                             { if ($1 == T_ENTERO && $3 == T_ENTERO) { $$ = T_LOGICO; }
-                                else { $$ = T_ERROR; 
-                                      yyerror("Error. Los tipos (multiplicativos) no coinciden."); 
-                                      $$ = T_ERROR;
-                                    }
+                              else {
+                                yyerror("Error. Los tipos (multiplicativos) no coinciden."); 
+                                $$ = T_ERROR;
+                              }
                             }
                           ;
 
+          // Revisar
           expresion_unaria: expresion_sufijo { $$ = $1; }
                           | operador_unario expresion_unaria
+                            { if ($2 == T_LOGICO) { $$ = T_LOGICO; }
+                              else { 
+                                yyerror("Error. No es de tipo lógico (unaria).");
+                                $$ = T_ERROR;
+                              }
+                            }
                           ;
 
-          expresion_sufijo: constante
-                          | APAR_ expresion CPAR_
+          expresion_sufijo: constante { $$ = T_ENTERO; }
+                          | APAR_ expresion CPAR_ { $$ = $2; }
                           | ID_
+                          {
+                            SIMB infoVar = obtTdS($1);
+                            if (infoVar.t != T_ERROR) { $$ = infoVar.t; }
+                            else {
+                              yyerror("Error. Variable no declarada.");
+                              $$ = T_ERROR;
+                            }
+                          }
                           | ID_ ALLAVE_ expresion CLLAVE_
+                          {
+                            SIMB infoVar = obtTdS($1);
+                            if (infoVar.t == T_ERROR)
+                            {
+                              yyerror("Error. Variable no declarada.");
+                              $$ = T_ERROR;
+                            }
+                            else if (infoVar.t != T_ARRAY)
+                            {
+                              yyerror("Error. Variable de tipo incorrecto, se esperaba tipo array.");
+                              $$ = T_ERROR;
+                            }
+                            else if ($3 != T_ENTERO )
+                            {
+                              yyerror("Error. Índice de tipo incorrecto, se esperaba tipo entero.");
+                              $$ = T_ERROR;
+                            } else {
+                              DIM infoArray = obtTda($1);
+                              if ($3 < 0 || $3 >= infoArray.nelem) {
+                                yyerror("Error. Índice fuera de rango.");
+                                $$ = T_ERROR;
+                              }
+                              else { $$ = infoArray.telem; }
+                            }    
+                          }
                           | ID_ APAR_ parametros_actuales CPAR_
+                          {
+                            SIMB infoVar = obtTdS($1);
+                            INF infoFunc = obtTdD(infoVar.ref)
+                            if (infoVar.t == T_ERROR || infoFunc.tipo == T_ERROR) {
+                              yyerror("Error. Función no declarada.");
+                              $$ = T_ERROR;
+                            } else if (!cmpDom(infoVar.ref, $3)) {
+                              yyerror("Error. Parámetros incorrectos.");
+                              $$ = T_ERROR;
+                            } else { $$ = infoVar.t; }
+                          }
                           ;
 
-       parametros_actuales: 
-                          | lista_parametros_actuales
+       parametros_actuales: /* Cadena vacía */ { $$ = insTdD(-1, T_VACIO); }
+                          | lista_parametros_actuales { $$ = $1; }
                           ;
 
- lista_parametros_actuales: expresion
-                          | expresion COMA_ lista_parametros_actuales 
+ lista_parametros_actuales: expresion { $$ = insTdD(-1, $1); }
+                          | expresion COMA_ lista_parametros_actuales { $$ = insTdD($3, $1); }
                           ;
 
            operador_logico: OPAND_
