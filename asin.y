@@ -48,13 +48,41 @@
                           ;
 
       declaracion_variable: tipo_simple ID_ PCOMA_
+                          {
+                            if (indsTdS($2, VARIABLE, $1, niv, dvar))
+                              dvar += TALLA_TIPO_SIMPLE;
+                            else
+                              yyerror("Error. Variable ya declarada.")
+                          }
                           | tipo_simple ID_ ASIG_ constante PCOMA_
+                            if ($4 != T_ENTERO)
+                              yyerror("Error. Constante no entera")
+                            else if ($1 != $4)
+                              yyerror("Error. Tipo de variable diferente del asignado.")
+                            else
+                            {
+                              if (indsTdS($2, VARIABLE, $1, niv, dvar))
+                                dvar += TALLA_TIPO_SIMPLE;
+                              else
+                                yyerror("Error. Variable ya declarada.")
+                            }
                           | tipo_simple ID_ ALLAVE_ CTE_ CLLAVE_ PCOMA_
+                          {
+                            if ($4 != T_ENTERO)
+                              yyerror("Error. Tamaño del array de tipo incorrecto.")
+                            else
+                            {
+                              if (indsTdS($2, VARIABLE, $1, niv, dvar))
+                                dvar += TALLA_TIPO_SIMPLE;
+                              else
+                                yyerror("Error. Variable ya declarada.")
+                            }
+                          }
                           ;
 
-                 constante: CTE_
-                          | TRUE_
-                          | FALSE_
+                 constante: CTE_ { $$ = T_ENTERO; }
+                          | TRUE_ { $$ = T_LOGICO; }
+                          | FALSE_ { $$ = T_LOGICO; }
                           ;
 
                tipo_simple: INT_
@@ -95,58 +123,114 @@ declaracion_variable_local:
                           ;
 
 instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
+                          {
+                            SIMB infoVar = obtTdS($3);
+                            if (infoVar.t == T_ERROR)
+                            {
+                              yyerror("Error. Variable sin declarar."); 
+                            } else if (infoVar != T_ENTERO)
+                            {
+                              yyerror("Error. Variable diferente de entero.")
+                            }
+                          }
                           | PRINT_ APAR_ expresion CPAR_ PCOMA_
+                          {
+                            SIMB infoVar = obtTdS($3);
+                            if (infoVar.t == T_ERROR)
+                            {
+                              yyerror("Error. Variable sin declarar."); 
+                            } else if (infoVar != T_ENTERO)
+                            {
+                              yyerror("Error. Variable diferente de entero.")
+                            }
+                          }
                           ;
 
-     instruccion_seleccion: IF_ APAR_ expresion CPAR_ instruccion ELSE_ instruccion
+     instruccion_seleccion: IF_ APAR_ expresion CPAR_ 
+                          {
+                            if ($3 != T_LOGICO) {
+                              yyerror("Error. Condición incorrecta."); 
+                              $$ = T_ERROR
+                            } else { $$ = T_LOGICO}
+                          }
+                            instruccion ELSE_ instruccion
                           ;
 
-     instruccion_iteracion: FOR_ APAR_ expresion_opcional PCOMA_ expresion PCOMA_ expresion_opcional CPAR_ instruccion
+     instruccion_iteracion: FOR_ APAR_ expresion_opcional PCOMA_ expresion PCOMA_ expresion_opcional CPAR_
+                          {
+                            if ($3 == T_ERROR) {
+                              yyerror("Error. Inicialización incorrecta."); 
+                            } else if ($5 != T_LOGICO) {
+                              yyerror("Error. Condición incorrecta."); 
+                            } else if ($7 == T_ERROR) {
+                              yyerror("Error. Paso incorrecto"); 
+                            }
+                          }
+                            instruccion
                           ;
 
-        expresion_opcional:
-                          | expresion
+        expresion_opcional: /* Cadena vacía */ { $$ = T_VACIO; }
+                          | expresion { $$ = $1; }
                           ;
 
-                 expresion: expresion_logica
+                 expresion: expresion_logica { $$ = $1; }
                           | ID_ ASIG_ expresion
+                          {
+                            SIMB infoVar = obtTdS($1)
+                            if (infoVar.t == T_ERROR) {
+                              yyerror("Error. Variable sin declarar."); 
+                              $$ = T_ERROR;
+                            } else if (infoVar.t == T_ARRAY) {
+                              yyerror("Error. Asignación sin indicar índice."); 
+                              $$ = T_ERROR;
+                            } else if (infoVar.t != $3) {
+                              yyerror("Error. Tipo incorrecto en la asignación."); 
+                              $$ = T_ERROR;
+                            } else { $$ = $1; }
+                          }
                           | ID_ ALLAVE_ expresion CLLAVE_ ASIG_ expresion
                           ;
 
           expresion_logica: expresion_igualdad { $$ = $1; }
                           | expresion_logica operador_logico expresion_igualdad 
-                            { if ($1 == T_LOGICO && $3 == T_LOGICO) { $$ = T_LOGICO; }
+                            { 
+                              if ($1 == T_LOGICO && $3 == T_LOGICO) { $$ = T_LOGICO; }
 					                    else {
-                                    yyerror("Error. Los tipos (logicos) no coinciden."); 
-                                    $$ = T_ERROR;
-                                   }
+                                yyerror("Error. Los tipos (logicos) no coinciden."); 
+                                $$ = T_ERROR;
+                              }
                             }
                           ;
 
         expresion_igualdad: expresion_relacional { $$ = $1; }
                           | expresion_igualdad operador_igualdad expresion_relacional
-                            { if (($1 == T_ENTERO && $3 == T_ENTERO) ||
-                                    ($1 == T_LOGICO && $3 == T_LOGICO)) { $$ = T_LOGICO; }
-                                else { 
-                                      yyerror("Error. Los tipos (igualdad) no coinciden."); 
-                                      $$ = T_ERROR;
-                                    }
+                            { 
+                              if (($1 == T_ENTERO && $3 == T_ENTERO) ||
+                                ($1 == T_LOGICO && $3 == T_LOGICO)) 
+                              { 
+                                $$ = T_LOGICO; 
+                              } else { 
+                                yyerror("Error. Los tipos (igualdad) no coinciden."); 
+                                $$ = T_ERROR;
+                              }
                             }
                           ;
 
       expresion_relacional: expresion_adicion { $$ = $1; }
                           | expresion_relacional operador_relacional expresion_adicion
-                            { if ($1 == T_ENTERO && $3 == T_ENTERO) { $$ = T_LOGICO; }
-                                else {
-                                      yyerror("Error. Los tipos (relacionales) no coinciden."); 
-                                      $$ = T_ERROR;
-                                    }
+                            { 
+                              if ($1 == T_ENTERO && $3 == T_ENTERO) { $$ = T_LOGICO; }
+                              else {
+                                yyerror("Error. Los tipos (relacionales) no coinciden."); 
+                                $$ = T_ERROR;
+                              }
                             }
                           ;
 
          expresion_adicion: expresion_multiplicativa { $$ = $1; }
                           | expresion_adicion operador_adicion expresion_multiplicativa
-                            { if ($1 == T_ENTERO && $3 == T_ENTERO) { $$ = T_LOGICO; }
+                            { 
+                              if ($1 == T_ENTERO && $3 == T_ENTERO) { $$ = T_LOGICO; }
                               else {
                                 yyerror("Error. Los tipos (adicionales) no coinciden."); 
                                 $$ = T_ERROR;
@@ -156,7 +240,8 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
 
   expresion_multiplicativa: expresion_unaria { $$ = $1; }
                           | expresion_multiplicativa operador_multiplicativo expresion_unaria
-                            { if ($1 == T_ENTERO && $3 == T_ENTERO) { $$ = T_LOGICO; }
+                            { 
+                              if ($1 == T_ENTERO && $3 == T_ENTERO) { $$ = T_LOGICO; }
                               else {
                                 yyerror("Error. Los tipos (multiplicativos) no coinciden."); 
                                 $$ = T_ERROR;
@@ -167,7 +252,8 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
           // Revisar
           expresion_unaria: expresion_sufijo { $$ = $1; }
                           | operador_unario expresion_unaria
-                            { if ($2 == T_LOGICO) { $$ = T_LOGICO; }
+                            { 
+                              if ($2 == T_LOGICO) { $$ = T_LOGICO; }
                               else { 
                                 yyerror("Error. No es de tipo lógico (unaria).");
                                 $$ = T_ERROR;
@@ -204,7 +290,7 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                               yyerror("Error. Índice de tipo incorrecto, se esperaba tipo entero.");
                               $$ = T_ERROR;
                             } else {
-                              DIM infoArray = obtTda($1);
+                              DIM infoArray = obtTdA(infoVar.ref);
                               if ($3 < 0 || $3 >= infoArray.nelem) {
                                 yyerror("Error. Índice fuera de rango.");
                                 $$ = T_ERROR;
