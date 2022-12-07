@@ -15,7 +15,7 @@
 
 %union{
   int cent;
-  char *ident;
+  char* ident;
   PF pf;
 }
 
@@ -28,7 +28,7 @@
 
 // Para los terminales
 %token <cent> CTE_ 
-%token <*ident> ID_
+%token <ident> ID_
 
 // Para los no-terminales
 %type <cent> lista_declaraciones declaracion constante tipo_simple declaracion_funcion

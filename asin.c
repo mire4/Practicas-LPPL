@@ -1287,7 +1287,7 @@ yyreduce:
   case 8: /* declaracion_variable: tipo_simple ID_ PCOMA_  */
 #line 67 "src/asin.y"
                           {
-                            if (insTdS((yyvsp[-1].*ident), VARIABLE, (yyvsp[-2].cent), niv, dvar, -1))
+                            if (insTdS((yyvsp[-1].ident), VARIABLE, (yyvsp[-2].cent), niv, dvar, -1))
                               dvar += TALLA_TIPO_SIMPLE;
                             else
                               yyerror("Error. Variable ya declarada.");
@@ -1304,7 +1304,7 @@ yyreduce:
                               yyerror("Error. Tipo de variable diferente del asignado.");
                             else
                             {
-                              if (insTdS((yyvsp[-3].*ident), VARIABLE, (yyvsp[-4].cent), niv, dvar, -1))
+                              if (insTdS((yyvsp[-3].ident), VARIABLE, (yyvsp[-4].cent), niv, dvar, -1))
                                 dvar += TALLA_TIPO_SIMPLE;
                               else
                                 yyerror("Error. Variable ya declarada.");
@@ -1320,7 +1320,7 @@ yyreduce:
                               yyerror("Error. Tamaño del array de tipo incorrecto.");
                             else
                             {
-                              if (insTdS((yyvsp[-4].*ident), VARIABLE, (yyvsp[-5].cent), niv, dvar, -1))
+                              if (insTdS((yyvsp[-4].ident), VARIABLE, (yyvsp[-5].cent), niv, dvar, -1))
                                 dvar += TALLA_TIPO_SIMPLE;
                               else
                                 yyerror("Error. Variable ya declarada.");
@@ -1371,9 +1371,9 @@ yyreduce:
   case 17: /* declaracion_funcion: tipo_simple ID_ $@2 APAR_ parametros_formales CPAR_ bloque  */
 #line 116 "src/asin.y"
                           {
-                            if (insTdS((yyvsp[-5].*ident), FUNCION, (yyvsp[-6].cent), niv - 1, -1, (yyvsp[-2].cent)))
+                            if (insTdS((yyvsp[-5].ident), FUNCION, (yyvsp[-6].cent), niv - 1, -1, (yyvsp[-2].cent)))
                             {
-                              if (strcmp((yyvsp[-5].*ident), "main\0") != 0) { (yyval.cent) = 1; }
+                              if (strcmp((yyvsp[-5].ident), "main\0") != 0) { (yyval.cent) = 1; }
                               else { (yyval.cent) = 0; }
                             }
                             else { yyerror("Error. Declaración repetida de la función."); }
@@ -1399,7 +1399,7 @@ yyreduce:
                             (yyval.pf).ref = insTdD(-1 , (yyvsp[-1].cent));
                             int talla = TALLA_TIPO_SIMPLE;
                             (yyval.pf).talla = talla;
-                            if (!insTdS((yyvsp[0].*ident), PARAMETRO, (yyvsp[-1].cent), niv, -talla, -1))
+                            if (!insTdS((yyvsp[0].ident), PARAMETRO, (yyvsp[-1].cent), niv, -talla, -1))
                               yyerror("Error. Declaración repetida del parámetro.");
                           }
 #line 1406 "asin.c"
@@ -1411,7 +1411,7 @@ yyreduce:
                             (yyval.pf).ref = insTdD((yyvsp[0].pf).ref, (yyvsp[-3].cent));
                             int talla = (yyvsp[0].pf).talla + TALLA_TIPO_SIMPLE;
                             (yyval.pf).talla = talla;
-                            if (!insTdS((yyvsp[-2].*ident), PARAMETRO, (yyvsp[-3].cent), niv, -talla, -1))
+                            if (!insTdS((yyvsp[-2].ident), PARAMETRO, (yyvsp[-3].cent), niv, -talla, -1))
                               yyerror("Error. Declaración repetida del parámetro.");
                           }
 #line 1418 "asin.c"
@@ -1429,7 +1429,7 @@ yyreduce:
   case 34: /* instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_  */
 #line 175 "src/asin.y"
                           {
-                            SIMB infoVar = obtTdS((yyvsp[-2].*ident));
+                            SIMB infoVar = obtTdS((yyvsp[-2].ident));
                             if (infoVar.t == T_ERROR)
                             {
                               yyerror("Error. Variable sin declarar."); 
@@ -1498,7 +1498,7 @@ yyreduce:
   case 43: /* expresion: ID_ ASIG_ expresion  */
 #line 223 "src/asin.y"
                           {
-                            SIMB infoVar = obtTdS((yyvsp[-2].*ident));
+                            SIMB infoVar = obtTdS((yyvsp[-2].ident));
                             if (infoVar.t == T_ERROR) {
                               yyerror("Error. Variable sin declarar."); 
                               (yyval.cent) = T_ERROR;
@@ -1516,7 +1516,7 @@ yyreduce:
   case 44: /* expresion: ID_ ACOR_ expresion CCOR_ ASIG_ expresion  */
 #line 237 "src/asin.y"
                           {
-                            SIMB infoVar = obtTdS((yyvsp[-5].*ident));
+                            SIMB infoVar = obtTdS((yyvsp[-5].ident));
                             if (infoVar.t == T_ERROR) {
                               yyerror("Error. Variable sin declarar."); 
                               (yyval.cent) = T_ERROR;
@@ -1666,7 +1666,7 @@ yyreduce:
   case 59: /* expresion_sufijo: ID_  */
 #line 334 "src/asin.y"
                           {
-                            SIMB infoVar = obtTdS((yyvsp[0].*ident));
+                            SIMB infoVar = obtTdS((yyvsp[0].ident));
                             if (infoVar.t != T_ERROR) { (yyval.cent) = infoVar.t; }
                             else {
                               yyerror("Error. Variable no declarada.");
@@ -1679,7 +1679,7 @@ yyreduce:
   case 60: /* expresion_sufijo: ID_ ACOR_ expresion CCOR_  */
 #line 343 "src/asin.y"
                           {
-                            SIMB infoVar = obtTdS((yyvsp[-3].*ident));
+                            SIMB infoVar = obtTdS((yyvsp[-3].ident));
                             if (infoVar.t == T_ERROR)
                             {
                               yyerror("Error. Variable no declarada.");
@@ -1711,7 +1711,7 @@ yyreduce:
   case 61: /* expresion_sufijo: ID_ APAR_ parametros_actuales CPAR_  */
 #line 371 "src/asin.y"
                           {
-                            SIMB infoVar = obtTdS((yyvsp[-3].*ident));
+                            SIMB infoVar = obtTdS((yyvsp[-3].ident));
                             INF infoFunc = obtTdD(infoVar.ref);
                             if (infoVar.t == T_ERROR || infoFunc.tipo == T_ERROR) {
                               yyerror("Error. Función no declarada.");

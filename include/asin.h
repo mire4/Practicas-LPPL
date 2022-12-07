@@ -99,7 +99,7 @@ union YYSTYPE
 #line 16 "src/asin.y"
 
   int cent;
-  char *ident;
+  char* ident;
   PF pf;
 
 #line 106 "asin.h"
