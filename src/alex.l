@@ -83,10 +83,10 @@ id             {letra}({letra}|{digito}|"_")*
 {delimitador}  { if (verbosidad) ECHO;  }
 "("            { retornar(APAR_);       }
 ")"            { retornar(CPAR_);       }
-"{"            { retornar(ACOR_);       }
-"}"            { retornar(CCOR_);       }
-"["            { retornar(ALLAVE_);     }
-"]"            { retornar(CLLAVE_);     }
+"{"            { retornar(ALLAVE_);       }
+"}"            { retornar(CLLAVE_);       }
+"["            { retornar(ACOR_);     }
+"]"            { retornar(CCOR_);     }
 ","            { retornar(COMA_);       }
 ";"            { retornar(PCOMA_);      }
 

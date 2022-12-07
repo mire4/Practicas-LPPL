@@ -23,7 +23,7 @@
 %token IF_ ELSE_ FOR_ RETURN_
 %token ASIG_ OPIGUALDAD_ OPDESIGUALDAD_ OPMAYOR_ OPMENOR_ OPMAYORIGUAL_ OPMENORIGUAL_
 %token OPMAS_ OPMENOS_ OPMUL_ OPDIV_ OPAND_ OPOR_ OPNEGACION_
-%token APAR_ CPAR_ ACOR_ CCOR_ ALLAVE_ CLLAVE_ COMA_ PCOMA_
+%token APAR_ CPAR_ ALLAVE_ CLLAVE_ ACOR_ CCOR_ COMA_ PCOMA_
 %token TRUE_ FALSE_ INT_ BOOL_ READ_ PRINT_
 
 // Para los terminales
@@ -84,7 +84,7 @@
                                 yyerror("Error. Variable ya declarada.");
                             }
                           }
-                          | tipo_simple ID_ ALLAVE_ CTE_ CLLAVE_ PCOMA_
+                          | tipo_simple ID_ ACOR_ CTE_ CCOR_ PCOMA_
                           {
                             if ($4 != T_ENTERO)
                               yyerror("Error. Tamaño del array de tipo incorrecto.");
@@ -145,7 +145,7 @@
                           }        
                           ;
 
-                    bloque: ACOR_ declaracion_variable_local lista_instrucciones RETURN_ expresion PCOMA_ CCOR_
+                    bloque: ALLAVE_ declaracion_variable_local lista_instrucciones RETURN_ expresion PCOMA_ CLLAVE_
                           {
                             INF infoFunc = obtTdD(-1);
                             if (infoFunc.tipo != $5) { yyerror("Error. Tipo de retorno incorrecto."); }
@@ -160,7 +160,7 @@ declaracion_variable_local:
                           | lista_instrucciones instruccion
                           ;
 
-               instruccion: ACOR_ lista_instrucciones CCOR_
+               instruccion: ALLAVE_ lista_instrucciones CLLAVE_
                           | intruccion_expresion
                           | instruccion_entrada_salida
                           | instruccion_seleccion
@@ -231,9 +231,31 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                             } else if (infoVar.t != $3) {
                               yyerror("Error. Tipo incorrecto en la asignación."); 
                               $$ = T_ERROR;
-                            } else { $$ = $1; }
+                            } else { $$ = T_VACIO; }
                           }
-                          | ID_ ALLAVE_ expresion CLLAVE_ ASIG_ expresion
+                          | ID_ ACOR_ expresion CCOR_ ASIG_ expresion
+                          {
+                            SIMB infoVar = obtTdS($1);
+                            if (infoVar.t == T_ERROR) {
+                              yyerror("Error. Variable sin declarar."); 
+                              $$ = T_ERROR;
+                            } else if (infoVar.t != T_ARRAY) {
+                              yyerror("Error. Variable de tipo diferente a array."); 
+                              $$ = T_ERROR;
+                            } else if ($3 == T_ENTERO) {
+                              yyerror("Error. Índice de tipo incorrecto."); 
+                              $$ = T_ERROR;
+                            } else {
+                              DIM infoArray = obtTdA(infoVar.ref);
+                              if (infoArray.telem != $6) {
+                                yyerror("Error. Tipo incorrecto en la asignación."); 
+                                $$ = T_ERROR;
+                              } else {
+                                $$ = T_VACIO;
+                              }
+                            }
+
+                          }
                           ;
 
           expresion_logica: expresion_igualdad { $$ = $1; }
@@ -317,7 +339,7 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                               $$ = T_ERROR;
                             }
                           }
-                          | ID_ ALLAVE_ expresion CLLAVE_
+                          | ID_ ACOR_ expresion CCOR_
                           {
                             SIMB infoVar = obtTdS($1);
                             if (infoVar.t == T_ERROR)
@@ -336,11 +358,13 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                               $$ = T_ERROR;
                             } else {
                               DIM infoArray = obtTdA(infoVar.ref);
-                              if ($3 < 0 || $3 >= infoArray.nelem) {
-                                yyerror("Error. Índice fuera de rango.");
-                                $$ = T_ERROR;
-                              }
-                              else { $$ = infoArray.telem; }
+                              // Revisar
+                              // if ($3 < 0 || $3 >= infoArray.nelem) {
+                              //   yyerror("Error. Índice fuera de rango.");
+                              //   $$ = T_ERROR;
+                              // }
+                              // else { $$ = infoArray.telem; }
+                              $$ = infoArray.telem;
                             }    
                           }
                           | ID_ APAR_ parametros_actuales CPAR_

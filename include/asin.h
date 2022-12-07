@@ -74,10 +74,10 @@ extern int yydebug;
     OPNEGACION_ = 275,             /* OPNEGACION_  */
     APAR_ = 276,                   /* APAR_  */
     CPAR_ = 277,                   /* CPAR_  */
-    ACOR_ = 278,                   /* ACOR_  */
-    CCOR_ = 279,                   /* CCOR_  */
-    ALLAVE_ = 280,                 /* ALLAVE_  */
-    CLLAVE_ = 281,                 /* CLLAVE_  */
+    ALLAVE_ = 278,                 /* ALLAVE_  */
+    CLLAVE_ = 279,                 /* CLLAVE_  */
+    ACOR_ = 280,                   /* ACOR_  */
+    CCOR_ = 281,                   /* CCOR_  */
     COMA_ = 282,                   /* COMA_  */
     PCOMA_ = 283,                  /* PCOMA_  */
     TRUE_ = 284,                   /* TRUE_  */

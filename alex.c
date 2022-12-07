@@ -992,22 +992,22 @@ YY_RULE_SETUP
 case 33:
 YY_RULE_SETUP
 #line 86 "src/alex.l"
-{ retornar(ACOR_);       }
+{ retornar(ALLAVE_);       }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
 #line 87 "src/alex.l"
-{ retornar(CCOR_);       }
+{ retornar(CLLAVE_);       }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
 #line 88 "src/alex.l"
-{ retornar(ALLAVE_);     }
+{ retornar(ACOR_);     }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
 #line 89 "src/alex.l"
-{ retornar(CLLAVE_);     }
+{ retornar(CCOR_);     }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
