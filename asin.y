@@ -36,15 +36,25 @@
 /*----------------------
   Seccion de reglas
 ------------------------*/
-                  programa: lista_declaraciones
+                  programa: 
+                          {
+                            dvar = 0;
+                            niv = 0;
+                            cargaContexto(niv);
+                          }
+                            lista_declaraciones
+                          {
+                            if ($2 == 0)
+                            { yyerror("Error. Debe de haber al menos una función main."); }
+                          }
                           ;
 
-       lista_declaraciones: declaracion
-                          | lista_declaraciones declaracion
+       lista_declaraciones: declaracion { $$ = $1; }
+                          | lista_declaraciones declaracion { $$ = $1 + $2; }
                           ;
 
-               declaracion: declaracion_variable
-                          | declaracion_funcion
+               declaracion: declaracion_variable { $$ = 0; }
+                          | declaracion_funcion { $$ = $1; }
                           ;
 
       declaracion_variable: tipo_simple ID_ PCOMA_
@@ -85,18 +95,37 @@
                           | FALSE_ { $$ = T_LOGICO; }
                           ;
 
-               tipo_simple: INT_
-                          | BOOL_
+               tipo_simple: INT_ { $$ = T_ENTERO; }
+                          | BOOL_ { $$ = T_LOGICO; }
                           ;
 
-       declaracion_funcion: tipo_simple ID_ APAR_ parametros_formales CPAR_ bloque
+       declaracion_funcion: tipo_simple ID_ 
+                          {
+                            niv = niv + 1; // REVISAR - Es = niv + 1 o = 1?
+                            cargaContexto(niv); 
+                          }
+                            APAR_ parametros_formales CPAR_ bloque
+                          {
+                            if (indsTdS($2, FUNCION, $1, niv - 1, -1 /* REVISAR - Por qué -1? */, $5))
+                            {
+                              if (strcmp($2, "main\0") != 0) { $$ = 1; }
+                              else { $$ = 0; }
+                            }
+                            else { yyerror("Error. Declaración repetida de la función."); }
+                          }
                           ;
 
-       parametros_formales: 
-                          | lista_parametros_formales
+       parametros_formales: /* Cadena vacía */ { $$  = insTdD(-1, T_VACIO); }
+                          | lista_parametros_formales { $$ = $1; }
                           ;
+// REVISAR - Hará falta crear una estructura para la lista de parámetros formales de forma
+//           que se pueda saber la referencia del primero (último?) en ser añadido así como
+//           que conforme se vayan añadiendo se tenga en cuenta su talla para el desplazamiento
+//           en la inserción de la TdD
+ lista_parametros_formales: tipo_simple ID_  
+                          {
 
- lista_parametros_formales: tipo_simple ID_
+                          }
                           | tipo_simple ID_ COMA_ lista_parametros_formales                   
                           ;
 
