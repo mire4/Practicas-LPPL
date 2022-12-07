@@ -10,11 +10,13 @@
 #include <stdio.h>
 #include <string.h>
 #include "header.h"
+#include "libtds.h"
 %}
 
 %union{
   int cent;
-  char *ident; 
+  char *ident;
+  PF pf;
 }
 
 // Declaraciones Bison
@@ -22,21 +24,25 @@
 %token ASIG_ OPIGUALDAD_ OPDESIGUALDAD_ OPMAYOR_ OPMENOR_ OPMAYORIGUAL_ OPMENORIGUAL_
 %token OPMAS_ OPMENOS_ OPMUL_ OPDIV_ OPAND_ OPOR_ OPNEGACION_
 %token APAR_ CPAR_ ACOR_ CCOR_ ALLAVE_ CLLAVE_ COMA_ PCOMA_
+%token TRUE_ FALSE_ INT_ BOOL_ READ_ PRINT_
 
 // Para los terminales
-%token <cent> CTE_ TRUE_ FALSE_ INT_ BOOL_ READ_ PRINT_
+%token <cent> CTE_ 
 %token <*ident> ID_
 
 // Para los no-terminales
-%type <cent> const tipo_simple 
-%type <cent> expresion_opcional expresion expresion_logica expresion_igualdad expresion_relacional
-%type <cent> expresion_adicion expresion_multiplicativa expresion_unaria expresion_sufijo
+%type <cent> lista_declaraciones declaracion constante tipo_simple declaracion_funcion
+%type <cent> parametros_formales expresion_opcional expresion expresion_logica
+%type <cent> expresion_igualdad expresion_relacional expresion_adicion
+%type <cent> expresion_multiplicativa expresion_unaria expresion_sufijo
+%type <cent> parametros_actuales lista_parametros_actuales
+%type <pf> lista_parametros_formales
 %%
 
 /*----------------------
   Seccion de reglas
 ------------------------*/
-                  programa: 
+                  programa:
                           {
                             dvar = 0;
                             niv = 0;
@@ -59,33 +65,35 @@
 
       declaracion_variable: tipo_simple ID_ PCOMA_
                           {
-                            if (indsTdS($2, VARIABLE, $1, niv, dvar))
+                            if (insTdS($2, VARIABLE, $1, niv, dvar, -1))
                               dvar += TALLA_TIPO_SIMPLE;
                             else
-                              yyerror("Error. Variable ya declarada.")
+                              yyerror("Error. Variable ya declarada.");
                           }
                           | tipo_simple ID_ ASIG_ constante PCOMA_
+                          {
                             if ($4 != T_ENTERO)
-                              yyerror("Error. Constante no entera")
+                              yyerror("Error. Constante no entera");
                             else if ($1 != $4)
-                              yyerror("Error. Tipo de variable diferente del asignado.")
+                              yyerror("Error. Tipo de variable diferente del asignado.");
                             else
                             {
-                              if (indsTdS($2, VARIABLE, $1, niv, dvar))
+                              if (insTdS($2, VARIABLE, $1, niv, dvar, -1))
                                 dvar += TALLA_TIPO_SIMPLE;
                               else
-                                yyerror("Error. Variable ya declarada.")
+                                yyerror("Error. Variable ya declarada.");
                             }
+                          }
                           | tipo_simple ID_ ALLAVE_ CTE_ CLLAVE_ PCOMA_
                           {
                             if ($4 != T_ENTERO)
-                              yyerror("Error. Tamaño del array de tipo incorrecto.")
+                              yyerror("Error. Tamaño del array de tipo incorrecto.");
                             else
                             {
-                              if (indsTdS($2, VARIABLE, $1, niv, dvar))
+                              if (insTdS($2, VARIABLE, $1, niv, dvar, -1))
                                 dvar += TALLA_TIPO_SIMPLE;
                               else
-                                yyerror("Error. Variable ya declarada.")
+                                yyerror("Error. Variable ya declarada.");
                             }
                           }
                           ;
@@ -101,12 +109,12 @@
 
        declaracion_funcion: tipo_simple ID_ 
                           {
-                            niv = niv + 1; // REVISAR - Es = niv + 1 o = 1?
+                            niv = 1;
                             cargaContexto(niv); 
                           }
                             APAR_ parametros_formales CPAR_ bloque
                           {
-                            if (indsTdS($2, FUNCION, $1, niv - 1, -1 /* REVISAR - Por qué -1? */, $5))
+                            if (insTdS($2, FUNCION, $1, niv - 1, -1, $5))
                             {
                               if (strcmp($2, "main\0") != 0) { $$ = 1; }
                               else { $$ = 0; }
@@ -116,20 +124,32 @@
                           ;
 
        parametros_formales: /* Cadena vacía */ { $$  = insTdD(-1, T_VACIO); }
-                          | lista_parametros_formales { $$ = $1; }
+                          | lista_parametros_formales { $$ = $1.ref; }
                           ;
-// REVISAR - Hará falta crear una estructura para la lista de parámetros formales de forma
-//           que se pueda saber la referencia del primero (último?) en ser añadido así como
-//           que conforme se vayan añadiendo se tenga en cuenta su talla para el desplazamiento
-//           en la inserción de la TdD
+
  lista_parametros_formales: tipo_simple ID_  
                           {
-
+                            $$.ref = insTdD(-1 , $1);
+                            int talla = TALLA_TIPO_SIMPLE;
+                            $$.talla = talla;
+                            if (!insTdS($2, PARAMETRO, $1, niv, -talla, -1))
+                              yyerror("Error. Declaración repetida del parámetro.");
                           }
-                          | tipo_simple ID_ COMA_ lista_parametros_formales                   
+                          | tipo_simple ID_ COMA_ lista_parametros_formales
+                          {
+                            $$.ref = insTdD($4.ref, $1);
+                            int talla = $4.talla + TALLA_TIPO_SIMPLE;
+                            $$.talla = talla;
+                            if (!insTdS($2, PARAMETRO, $1, niv, -talla, -1))
+                              yyerror("Error. Declaración repetida del parámetro.");
+                          }        
                           ;
 
                     bloque: ACOR_ declaracion_variable_local lista_instrucciones RETURN_ expresion PCOMA_ CCOR_
+                          {
+                            INF infoFunc = obtTdD(-1);
+                            if (infoFunc.tipo != $5) { yyerror("Error. Tipo de retorno incorrecto."); }
+                          }
                           ;
 
 declaracion_variable_local: 
@@ -157,30 +177,26 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                             if (infoVar.t == T_ERROR)
                             {
                               yyerror("Error. Variable sin declarar."); 
-                            } else if (infoVar != T_ENTERO)
+                            } else if (infoVar.t != T_ENTERO)
                             {
-                              yyerror("Error. Variable diferente de entero.")
+                              yyerror("Error. Variable diferente de entero.");
                             }
                           }
                           | PRINT_ APAR_ expresion CPAR_ PCOMA_
                           {
-                            SIMB infoVar = obtTdS($3);
-                            if (infoVar.t == T_ERROR)
+                            if ($3 == T_ERROR)
                             {
                               yyerror("Error. Variable sin declarar."); 
-                            } else if (infoVar != T_ENTERO)
+                            } else if ($3 != T_ENTERO)
                             {
-                              yyerror("Error. Variable diferente de entero.")
+                              yyerror("Error. Variable diferente de entero.");
                             }
                           }
                           ;
 
      instruccion_seleccion: IF_ APAR_ expresion CPAR_ 
                           {
-                            if ($3 != T_LOGICO) {
-                              yyerror("Error. Condición incorrecta."); 
-                              $$ = T_ERROR
-                            } else { $$ = T_LOGICO}
+                            if ($3 != T_LOGICO) { yyerror("Error. Condición incorrecta."); }
                           }
                             instruccion ELSE_ instruccion
                           ;
@@ -205,7 +221,7 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                  expresion: expresion_logica { $$ = $1; }
                           | ID_ ASIG_ expresion
                           {
-                            SIMB infoVar = obtTdS($1)
+                            SIMB infoVar = obtTdS($1);
                             if (infoVar.t == T_ERROR) {
                               yyerror("Error. Variable sin declarar."); 
                               $$ = T_ERROR;
@@ -330,7 +346,7 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                           | ID_ APAR_ parametros_actuales CPAR_
                           {
                             SIMB infoVar = obtTdS($1);
-                            INF infoFunc = obtTdD(infoVar.ref)
+                            INF infoFunc = obtTdD(infoVar.ref);
                             if (infoVar.t == T_ERROR || infoFunc.tipo == T_ERROR) {
                               yyerror("Error. Función no declarada.");
                               $$ = T_ERROR;

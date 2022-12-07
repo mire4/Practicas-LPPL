@@ -54,10 +54,10 @@ id             {letra}({letra}|{digito}|"_")*
 "else"         { retornar(ELSE_);   }
 "for"          { retornar(FOR_);    }
 
-{id}           { retornar(ID_);     }
-{entero}       { retornar(CTE_);    }
-{real1}        { retornar(CTE_);    }
-{real2}        { retornar(CTE_);    }
+{id}           { yylval.ident=strdup(yytext); retornar(ID_); }
+{entero}       { yylval.cent=atoi(yytext);    retornar(CTE_); }
+{real1}        { yylval.cent=atoi(yytext);    retornar(CTE_); }
+{real2}        { yylval.cent=atoi(yytext);    retornar(CTE_); }
 
 "="            { retornar(ASIG_);   }
 

@@ -6,6 +6,14 @@
 #ifndef _HEADER_H
 #define _HEADER_H
 
+typedef struct param_form
+{
+  int ref;
+  int talla;
+} PF;
+
+#define TALLA_TIPO_SIMPLE 1
+
 /****************************************************** Constantes generales */
 #define TRUE  1
 #define FALSE 0
