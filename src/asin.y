@@ -15,7 +15,7 @@
 
 %union{
   int cent;
-  char *ident;
+  char* ident;
   PF pf;
 }
 
