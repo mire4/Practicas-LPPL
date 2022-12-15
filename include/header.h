@@ -30,5 +30,8 @@ extern void yyerror(const char * msg) ;   /* Tratamiento de errores          */
 extern int verbosidad;                   /* Flag si se desea una traza       */
 extern int numErrores;              /* Contador del numero de errores        */
 
+/******************************************************************** Custom */
+extern void from_type_to_string(char* string, int type);
+
 #endif  /* _HEADER_H */
 /*****************************************************************************/

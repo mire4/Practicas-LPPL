@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.8.2.  */
+/* A Bison parser, made by GNU Bison 3.5.1.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2020 Free Software Foundation,
    Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -31,9 +31,8 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
-   especially those whose name start with YY_ or yy_.  They are
-   private implementation details that can be changed or removed.  */
+/* Undocumented macros, especially those whose name start with YY_,
+   are private implementation details.  Do not rely on them.  */
 
 #ifndef YY_YY_ASIN_H_INCLUDED
 # define YY_YY_ASIN_H_INCLUDED
@@ -45,51 +44,46 @@
 extern int yydebug;
 #endif
 
-/* Token kinds.  */
+/* Token type.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-    YYEMPTY = -2,
-    YYEOF = 0,                     /* "end of file"  */
-    YYerror = 256,                 /* error  */
-    YYUNDEF = 257,                 /* "invalid token"  */
-    IF_ = 258,                     /* IF_  */
-    ELSE_ = 259,                   /* ELSE_  */
-    FOR_ = 260,                    /* FOR_  */
-    RETURN_ = 261,                 /* RETURN_  */
-    ASIG_ = 262,                   /* ASIG_  */
-    OPIGUALDAD_ = 263,             /* OPIGUALDAD_  */
-    OPDESIGUALDAD_ = 264,          /* OPDESIGUALDAD_  */
-    OPMAYOR_ = 265,                /* OPMAYOR_  */
-    OPMENOR_ = 266,                /* OPMENOR_  */
-    OPMAYORIGUAL_ = 267,           /* OPMAYORIGUAL_  */
-    OPMENORIGUAL_ = 268,           /* OPMENORIGUAL_  */
-    OPMAS_ = 269,                  /* OPMAS_  */
-    OPMENOS_ = 270,                /* OPMENOS_  */
-    OPMUL_ = 271,                  /* OPMUL_  */
-    OPDIV_ = 272,                  /* OPDIV_  */
-    OPAND_ = 273,                  /* OPAND_  */
-    OPOR_ = 274,                   /* OPOR_  */
-    OPNEGACION_ = 275,             /* OPNEGACION_  */
-    APAR_ = 276,                   /* APAR_  */
-    CPAR_ = 277,                   /* CPAR_  */
-    ALLAVE_ = 278,                 /* ALLAVE_  */
-    CLLAVE_ = 279,                 /* CLLAVE_  */
-    ACOR_ = 280,                   /* ACOR_  */
-    CCOR_ = 281,                   /* CCOR_  */
-    COMA_ = 282,                   /* COMA_  */
-    PCOMA_ = 283,                  /* PCOMA_  */
-    TRUE_ = 284,                   /* TRUE_  */
-    FALSE_ = 285,                  /* FALSE_  */
-    INT_ = 286,                    /* INT_  */
-    BOOL_ = 287,                   /* BOOL_  */
-    READ_ = 288,                   /* READ_  */
-    PRINT_ = 289,                  /* PRINT_  */
-    CTE_ = 290,                    /* CTE_  */
-    ID_ = 291                      /* ID_  */
+    IF_ = 258,
+    ELSE_ = 259,
+    FOR_ = 260,
+    RETURN_ = 261,
+    ASIG_ = 262,
+    OPIGUALDAD_ = 263,
+    OPDESIGUALDAD_ = 264,
+    OPMAYOR_ = 265,
+    OPMENOR_ = 266,
+    OPMAYORIGUAL_ = 267,
+    OPMENORIGUAL_ = 268,
+    OPMAS_ = 269,
+    OPMENOS_ = 270,
+    OPMUL_ = 271,
+    OPDIV_ = 272,
+    OPAND_ = 273,
+    OPOR_ = 274,
+    OPNEGACION_ = 275,
+    APAR_ = 276,
+    CPAR_ = 277,
+    ALLAVE_ = 278,
+    CLLAVE_ = 279,
+    ACOR_ = 280,
+    CCOR_ = 281,
+    COMA_ = 282,
+    PCOMA_ = 283,
+    TRUE_ = 284,
+    FALSE_ = 285,
+    INT_ = 286,
+    BOOL_ = 287,
+    READ_ = 288,
+    PRINT_ = 289,
+    CTE_ = 290,
+    ID_ = 291
   };
-  typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
@@ -102,7 +96,7 @@ union YYSTYPE
   char *ident;
   PF pf;
 
-#line 106 "asin.h"
+#line 100 "asin.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -113,8 +107,6 @@ typedef union YYSTYPE YYSTYPE;
 
 extern YYSTYPE yylval;
 
-
 int yyparse (void);
-
 
 #endif /* !YY_YY_ASIN_H_INCLUDED  */

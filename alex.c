@@ -1,6 +1,6 @@
-#line 1 "alex.c"
+#line 2 "alex.c"
 
-#line 3 "alex.c"
+#line 4 "alex.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -529,7 +529,7 @@ char *yytext;
 #include "asin.h"
 
 #define  retornar(x) {if (verbosidad) ECHO; return(x); }
-#line 532 "alex.c"
+#line 533 "alex.c"
 /*---------------------------------------------------------------------
   Estas opciones evitan "warnings" innecesarios y permiten obtener el
   numero de linea actual en la variable global "yylineno".
@@ -544,7 +544,7 @@ char *yytext;
 /*----------------------
   Subseccion reglas
 ------------------------*/
-#line 547 "alex.c"
+#line 548 "alex.c"
 
 #define INITIAL 0
 
@@ -761,7 +761,7 @@ YY_DECL
 	{
 #line 43 "src/alex.l"
 
-#line 764 "alex.c"
+#line 765 "alex.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1029,7 +1029,7 @@ YY_RULE_SETUP
 #line 94 "src/alex.l"
 ECHO;
 	YY_BREAK
-#line 1032 "alex.c"
+#line 1033 "alex.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 

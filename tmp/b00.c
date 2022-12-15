@@ -1,20 +1,12 @@
-// Ejemplo de manipulacion de vectores: 9 errores
-//-----------------------------------------------
-int main() 
+// Ejemplo con errores lexicos y falta de "main": 2 errores
+//---------------------------------------------------------
+int principal ( )
 {
-  int  a[20];
-  int  b=false;  // Error de tipos en la inicializacion de la variable
-  bool c=true; 
-  bool d[0];     // Talla inapropiada del array
-  int  a;        // Identificador variable repetido
-  bool b[21];    // Identificador del array repetido
-  
-  e = 27;        // Objeto no declarado
-  c = a[2];      // Error de tipos en la "asignacion"
-  a[4] = c;      // Error de tipos en la asignacion a un `array'
-    
-  a[c] = 1 ;     // El indice del "array" debe ser entero
-  b[14] = 27;    // La variable debe ser de tipo "array"
+  int  aAa123_2016;
+  int c#;                   // caracter desconocido
 
+  aAa123_2016 = 3;
+  c = (((aAa123_2016 / 2) + 3.56) - .34) * 2.;
+  
   return 0;
-}
+}                           // el programa no tiene 'main'
