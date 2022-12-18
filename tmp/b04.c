@@ -1,33 +1,22 @@
-// Ejemplo sintactico-semantico (absurdo) sin errores.
-// Comprobad el resultado con la funcion "verTdS". Advertid
-// que los parametros se situen en orden inverso en la TdS
-// y deben tener desplazamientos negativos.
-//---------------------------------------------------------
-bool a;
-int  b[27];
+// Ejemplo de manipulacion de funciones: 10 errores
+//-------------------------------------------------
 
-int F (int x, int y)
-{ 
-   bool a[27]; int b; 
-
-  return y-x;
-}
-
-int c[27];
-int d;
-
-int main()
+bool X[20];
+bool main (int A, bool A)  // Identificador de parametro repetido
 {
-  int z[27];  int x; 
-
-  read(x); read(d);
-
-  if (x < d) print( F(x,d));
-  else print( F(d,x));
-
-  return 0;
+  bool A;                  // Identificador de variable repetido
+  return 14;               // Error de tipos en el "return" 
 }
-    
+
+int Y (int A, bool B)   
+{
+  int X[10];
+  return X;                // En la expresion del 'return'
+}
+
+int main ()                // Identificador de funcion repetido
+{
+  int x; bool y;             
   x = 14;  y = true;
   if (x) {                 // La expresion del `if' debe ser 'logico'
     x = X(x, y);           // En la asignacion a una variable simple

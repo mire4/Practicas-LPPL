@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "header.h"
+#include "libtds.h"
+#include <stdlib.h>
 
 int verTdS=FALSE;                        /* Flag para mostrar la TDS         */
 int verbosidad=FALSE;                    /* Flag si se desea una traza       */
@@ -42,3 +44,15 @@ int main (int argc, char **argv)
  return (0);
 } 
 /*****************************************************************************/
+void print_type(int type)
+{
+  switch (type) {
+    case (T_VACIO): yyerror("T_VACIO\0"); break;
+    case (T_ENTERO): yyerror("T_ENTERO\0"); break;
+    case (T_LOGICO): yyerror("T_LOGICO\0"); break;
+    case (T_ARRAY): yyerror("T_ARRAY\0"); break;
+    case (T_ERROR): yyerror("T_ERROR\0"); break;
+    default: yyerror("T_NTYPE\0"); break;
+  }
+}
+
