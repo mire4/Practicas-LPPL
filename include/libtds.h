@@ -37,7 +37,7 @@ typedef struct inf  /* Estructura para las funciones                         */
   char *nom;                             /* Nombre de la funcion             */
   int   tipo;                            /* Tipo del rango de la funcion     */
   int   tsp;                             /* Talla del segmento de parametros */
-} INF;
+}INF;
 
 /*************************** Variables globales de uso en todo el compilador */
 int dvar;                     /* Desplazamiento en el Segmento de Variables  */
