@@ -12,6 +12,16 @@ typedef struct param_form
   int talla;
 } PF;
 
+typedef struct exp {
+  int t;
+  int d;
+} EXP;
+
+typedef struct cons {
+  int t;
+  int v;
+} CONS;
+
 #define TALLA_TIPO_SIMPLE 1
 
 /****************************************************** Constantes generales */

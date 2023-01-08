@@ -17,6 +17,8 @@
   int cent;
   char *ident;
   PF pf;
+  EXP exp;
+  CONS cons;
 }
 
 // Declaraciones Bison
@@ -31,12 +33,18 @@
 %token <ident> ID_
 
 // Para los no-terminales
-%type <cent> lista_declaraciones declaracion constante tipo_simple declaracion_funcion
-%type <cent> parametros_formales expresion_opcional expresion expresion_logica
-%type <cent> expresion_igualdad expresion_relacional expresion_adicion
-%type <cent> expresion_multiplicativa expresion_unaria expresion_sufijo
+%type <cent> lista_declaraciones declaracion tipo_simple declaracion_funcion
+%type <cent> parametros_formales 
 %type <cent> parametros_actuales lista_parametros_actuales
 %type <pf> lista_parametros_formales
+
+// Contantes
+%type<cons> constante
+
+// Expresiones
+%type <exp> expresion expresion_opcional expresion_logica
+%type <exp> expresion_igualdad expresion_relacional expresion_adicion
+%type <exp> expresion_multiplicativa expresion_unaria expresion_sufijo
 %%
 
 /*----------------------
@@ -79,7 +87,11 @@
                               insTdS($2, VARIABLE, T_VACIO, niv, dvar, -1);
                             } else {
                               if (insTdS($2, VARIABLE, $1, niv, dvar, -1))
+                              {
                                 dvar += TALLA_TIPO_SIMPLE;
+                                int desp = creaVarTemp();
+                                emite(EASIG, crArgEnt($4.v), crArgNul(), crArgPos(niv, desp))
+                              }
                               else
                                 yyerror("Variable ya declarada.");
                             }
@@ -98,9 +110,9 @@
                           }
                           ;
 
-                 constante: CTE_ { $$ = T_ENTERO; }
-                          | TRUE_ { $$ = T_LOGICO; }
-                          | FALSE_ { $$ = T_LOGICO; }
+                 constante: CTE_ { $$ = T_ENTERO; $$.v = $1; }
+                          | TRUE_ { $$ = T_LOGICO; $$.v = 1; }
+                          | FALSE_ { $$ = T_LOGICO; $$.v = 0; }
                           ;
 
                tipo_simple: INT_ { $$ = T_ENTERO; }
@@ -321,7 +333,8 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                           | expresion_adicion operador_adicion expresion_multiplicativa
                             { 
                               if ($1 == T_ENTERO && $3 == T_ENTERO) { 
-                                $$ = T_ENTERO; 
+                                $$ = T_ENTERO;
+
                               } else if ($1 == T_ERROR || $3 == T_ERROR) {
                                 $$ = T_ERROR;
                               } else {
