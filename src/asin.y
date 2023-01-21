@@ -45,6 +45,10 @@
 %type <exp> expresion expresion_opcional expresion_logica
 %type <exp> expresion_igualdad expresion_relacional expresion_adicion
 %type <exp> expresion_multiplicativa expresion_unaria expresion_sufijo
+
+// Operadores
+%type <cent> operador_logico operador_igualdad operador_relacional
+%type <cent> operador_adicion operador_multiplicativo operador_unario
 %%
 
 /*----------------------
@@ -62,6 +66,8 @@
                               yyerror("Debe de haber al menos una función main.");
                             else if ($2 > 1)
                               yyerror("El programa tiene más de un main.");
+                            else
+                              emite(FIN, crArgNul(), crArgNul(), crArgNul());
                           }
                           ;
 
@@ -110,9 +116,9 @@
                           }
                           ;
 
-                 constante: CTE_ { $$ = T_ENTERO; $$.v = $1; }
-                          | TRUE_ { $$ = T_LOGICO; $$.v = 1; }
-                          | FALSE_ { $$ = T_LOGICO; $$.v = 0; }
+                 constante: CTE_ { $$.t = T_ENTERO; $$.v = $1; }
+                          | TRUE_ { $$.t = T_LOGICO; $$.v = 1; }
+                          | FALSE_ { $$.t = T_LOGICO; $$.v = 0; }
                           ;
 
                tipo_simple: INT_ { $$ = T_ENTERO; }
@@ -169,7 +175,7 @@
                           {
                             INF infoFunc = obtTdD(-1);
                             if (infoFunc.tipo == T_ERROR) { yyerror("Error en la declaración de la función."); } 
-                            else if (infoFunc.tipo != $5) { yyerror("Tipo de retorno incorrecto."); }
+                            else if (infoFunc.tipo != $5.t) { yyerror("Tipo de retorno incorrecto."); }
                           }
                           CLLAVE_
                           ;
@@ -197,48 +203,67 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                           {
                             SIMB infoVar = obtTdS($3);
                             if (infoVar.t == T_ERROR)
-                            {
                               yyerror("Variable sin declarar."); 
-                            } else if (infoVar.t != T_ENTERO)
-                            {
+                            else if (infoVar.t != T_ENTERO)
                               yyerror("Variable diferente de entero.");
-                            }
                           }
                           | PRINT_ APAR_ expresion CPAR_ PCOMA_
                           {
-                            if ($3 == T_ERROR)
-                            {
+                            if ($3.t == T_ERROR)
                               yyerror("Variable sin declarar."); 
-                            } else if ($3 != T_ENTERO)
-                            {
+                            else if ($3.t != T_ENTERO)
                               yyerror("Variable diferente de entero.");
-                            }
                           }
                           ;
 
      instruccion_seleccion: IF_ APAR_ expresion CPAR_ 
                           {
-                            if ($3 != T_LOGICO && !($3 == T_ERROR)) { yyerror("Condición incorrecta."); }
+                            if ($3.t != T_LOGICO && $3.t != T_ERROR) { yyerror("Condición incorrecta."); }
+                            else if ($3.t != T_ERROR)
+                            {
+                              int ifLans = creaLans(si);  
+                              emite(EIGUAL, crArgPos(niv, $3.d), crArgEnt(0), crArgEtq(ifLans)); 
+                            }
                           }
-                            instruccion ELSE_ instruccion
+                            instruccion 
+                          {
+                            if ($3.t != T_ERROR)
+                            {
+                              completaLans(ifLans, crArgEtq(si));
+                              int elseLans = creaLans(si);
+                              emite(GOTOS, crArgNul(), crArgNul(), crArgEtq(elseLans)); 
+                            }
+                          }
+                          ELSE_ instruccion
+                          {
+                            if ($3.t != T_ERROR)
+                              completaLans(elseLans, crArgEtq(si));
+                          }
                           ;
 
      instruccion_iteracion: FOR_ APAR_ expresion_opcional PCOMA_ expresion PCOMA_ expresion_opcional CPAR_
                           {
-                            if ($3 == T_ERROR) {
+                            if ($3.t == T_ERROR) {
                               yyerror("Inicialización incorrecta.");
-                            } else if ($3 != T_VACIO && $3 != T_ENTERO && $3 != T_LOGICO) {
-                              yyerror("La expresión opcional debe ser de tipo simple.");
-                            } else if ($5 != T_LOGICO) {
+                            //} else if ($3.t != T_VACIO && $3.t != T_ENTERO && $3.t != T_LOGICO) {
+                            //  yyerror("La expresión opcional debe ser de tipo simple.");
+                            } else if ($5.t != T_LOGICO) {
                               yyerror("Condición incorrecta."); 
-                            } else if ($7 == T_ERROR) {
+                            } else if ($7.t == T_ERROR) {
                               yyerror("Paso incorrecto"); 
+                            } else {
+                              int forLans = creaLans();
+                              emite(EIGUAL, crArgPos(niv, $5.d), crArgEnt(0), crArgEtq(forLans));
                             }
                           }
                             instruccion
+                          {
+                            // Comprobar que el for está bien?
+                            completaLans(forLans, crArgEtq(si));
+                          }
                           ;
 
-        expresion_opcional: /* Cadena vacía */ { $$ = T_VACIO; }
+        expresion_opcional: /* Cadena vacía */ { $$.t = T_VACIO; }
                           | expresion { $$ = $1; }
                           ;
 
@@ -248,48 +273,56 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                             SIMB infoVar = obtTdS($1);
                             if (infoVar.t == T_ERROR) {
                               yyerror("Variable sin declarar."); 
-                              $$ = T_ERROR;
+                              $$.t = T_ERROR;
                             } else if (infoVar.t == T_ARRAY) {
                               yyerror("Asignación sin indicar índice."); 
-                              $$ = T_ERROR;
-                            } else if ($3 == T_ERROR) { 
-                              $$ = T_ERROR;
-                            } else if (infoVar.t != $3) {
+                              $$.t = T_ERROR;
+                            } else if ($3.t == T_ERROR) { 
+                              $$.t = T_ERROR;
+                            } else if (infoVar.t != $3.t) {
                               yyerror("Tipo incorrecto en la asignación."); 
-                              $$ = T_ERROR;
-                            } else { $$ = T_VACIO; }
+                              $$.t = T_ERROR;
+                            } else {
+                              emite(EASIG, crArgEnt($3.d), crArgNul(), crArgPos(infoVar.n, infoVar.d));
+                              $$.t = T_VACIO; 
+                            }
                           }
                           | ID_ ACOR_ expresion CCOR_ ASIG_ expresion
                           {
                             SIMB infoVar = obtTdS($1);
                             if (infoVar.t == T_ERROR) {
                               yyerror("Variable sin declarar."); 
-                              $$ = T_ERROR;
+                              $$.t = T_ERROR;
                             } else if (infoVar.t != T_ARRAY) {
                               yyerror("Variable de tipo diferente a array."); 
-                              $$ = T_ERROR;
-                            } else if ($3 != T_ENTERO) {
+                              $$.t = T_ERROR;
+                            } else if ($3.t == T_ERROR || $6.t == T_ERROR) {
+                              $$.t = T_ERROR;
+                            } else if ($3.t != T_ENTERO) {
                               yyerror("Índice de tipo incorrecto."); 
-                              $$ = T_ERROR;
-                            } else if ($6 == T_ERROR) {
-                                $$ = T_ERROR;
+                              $$.t = T_ERROR;
                             } else {
                               DIM infoArray = obtTdA(infoVar.ref);
                               if (infoArray.telem != $6) {
                                 yyerror("Tipo incorrecto en la asignación."); 
-                                $$ = T_ERROR;
+                                $$.t = T_ERROR;
                               } else {
-                                $$ = T_VACIO;
+                                emite(EVA, crArgPos(niv, infoVar.d), crArgPos(niv, $3.d), crArgPos(niv, $6.d));
+                                $$.t = T_VACIO;
                               }
                             }
-
                           }
                           ;
 
           expresion_logica: expresion_igualdad { $$ = $1; }
                           | expresion_logica operador_logico expresion_igualdad 
                             { 
-                              if ($1 == T_LOGICO && $3 == T_LOGICO) { $$ = T_LOGICO; }
+                              if ($1 == T_LOGICO && $3 == T_LOGICO) { 
+                                int desp = creaVarTemp();
+                                emite($2, crArgPos(niv, $1.p), crArgPos(niv, $3.p), crArgPos(niv, desp));
+                                $$.t = T_LOGICO;
+                                $$.d = desp;
+                              }
 					                    else if ($1 == T_ERROR || $3 == T_ERROR) {
                                 $$ = T_ERROR;
                               } else { 
@@ -302,15 +335,19 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
         expresion_igualdad: expresion_relacional { $$ = $1; }
                           | expresion_igualdad operador_igualdad expresion_relacional
                             { 
-                              if (($1 == T_ENTERO && $3 == T_ENTERO) ||
-                                ($1 == T_LOGICO && $3 == T_LOGICO)) 
+                              if (($1.t == T_ENTERO && $3.t == T_ENTERO) ||
+                                ($1.t == T_LOGICO && $3.t == T_LOGICO)) 
                               { 
-                                $$ = T_LOGICO;
-                              } else if ($1 == T_ERROR || $3 == T_ERROR) {
-                                $$ = T_ERROR;
+                                int desp = creaVarTemp();
+                                emite(EASIG, crArgEnt(1), crArgNul(), crArgPos(niv, desp));
+                                emite($2, crArgPos(niv, $1.pos), crArgPos(niv, $3.pos), crArgEtq(si + 2));
+                                emite(EASIG, crArgEnt(0), crArgNul(), crArgPos(niv, desp));                                $$.t = T_LOGICO;
+                                $$.d = desp;
+                              } else if ($1.t == T_ERROR || $3.t == T_ERROR) {
+                                $$.t = T_ERROR;
                               } else { 
                                 yyerror("Los tipos (igualdad) no coinciden."); 
-                                $$ = T_ERROR;
+                                $$.t = T_ERROR;
                               }
                             }
                           ;
@@ -318,13 +355,18 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
       expresion_relacional: expresion_adicion { $$ = $1; }
                           | expresion_relacional operador_relacional expresion_adicion
                             { 
-                              if ($1 == T_ENTERO && $3 == T_ENTERO) {
-                                $$ = T_LOGICO; 
-                              } else if ($1 == T_ERROR || $3 == T_ERROR) {
-                                $$ = T_ERROR;
+                              if ($1.t == T_ENTERO && $3.t == T_ENTERO) {
+                                int desp = creaVarTemp();
+                                emite(EASIG, crArgEnt(1), crArgNul(), crArgPos(niv, desp));
+                                emite($2, crArgPos(niv, $1.pos), crArgPos(niv, $3.pos), crArgEtq(si + 2));
+                                emite(EASIG, crArgEnt(0), crArgNul(), crArgPos(niv, desp));
+                                $$.t = T_LOGICO; 
+                                $$.d = desp;
+                              } else if ($1.t == T_ERROR || $3.t == T_ERROR) {
+                                $$.t = T_ERROR;
                               } else {
                                 yyerror("Los tipos (relacionales) no coinciden."); 
-                                $$ = T_ERROR;
+                                $$.t = T_ERROR;
                               }
                             }
                           ;
@@ -332,14 +374,16 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
          expresion_adicion: expresion_multiplicativa { $$ = $1; }
                           | expresion_adicion operador_adicion expresion_multiplicativa
                             { 
-                              if ($1 == T_ENTERO && $3 == T_ENTERO) { 
-                                $$ = T_ENTERO;
-
-                              } else if ($1 == T_ERROR || $3 == T_ERROR) {
-                                $$ = T_ERROR;
+                              if ($1.t == T_ENTERO && $3.t == T_ENTERO) {
+                                int desp = creaVarTemp();
+                                emite($2, crArgPos(niv, $1.p), crArgPos(niv, $3.p), crArgPos(niv, desp));
+                                $$.t = T_ENTERO;
+                                $$.d = desp;
+                              } else if ($1.t == T_ERROR || $3.t == T_ERROR) {
+                                $$.t = T_ERROR;
                               } else {
                                 yyerror("Los tipos (adicionales) no coinciden."); 
-                                $$ = T_ERROR;
+                                $$.t = T_ERROR;
                               }
                             }
                           ;
@@ -347,13 +391,16 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
   expresion_multiplicativa: expresion_unaria { $$ = $1; }
                           | expresion_multiplicativa operador_multiplicativo expresion_unaria
                             { 
-                              if ($1 == T_ENTERO && $3 == T_ENTERO) {
-                                $$ = T_ENTERO; 
-                              } else if ($1 == T_ERROR || $3 == T_ERROR) {
-                                $$ = T_ERROR;
+                              if ($1.t == T_ENTERO && $3.t == T_ENTERO) {
+                                int desp = creaVarTemp();
+                                emite($2, crArgPos(niv, $1.p), crArgPos(niv, $3.p), crArgPos(niv, desp));
+                                $$.t = T_ENTERO;
+                                $$.d = desp;
+                              } else if ($1.t == T_ERROR || $3.t == T_ERROR) {
+                                $$.t = T_ERROR;
                               } else {
                                 yyerror("Los tipos (multiplicativos) no coinciden."); 
-                                $$ = T_ERROR;
+                                $$.t = T_ERROR;
                               }
                             }
                           ;
@@ -362,26 +409,58 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
           expresion_unaria: expresion_sufijo { $$ = $1; }
                           | operador_unario expresion_unaria
                             { 
-                              if ($2 == T_LOGICO) {
-                                $$ = T_LOGICO; 
-                              } else if ($2 == T_ERROR) {
-                                $$ = T_ERROR;                              
+                              if ($2.t == T_LOGICO) {
+                                if ($1 == EDIF)
+                                {
+                                  int desp = creaVarTemp();
+                                  emite($1, crArgEnt(1), crArgPos(niv, $2.d), crArgPos(niv, desp)); 
+                                  $$.t == $2.t;
+                                  $$.d == desp;
+                                } else {
+                                  yyerror("Operación incorrecta para tipo lógico (unaria).");
+                                  $$.t = T_ERROR;
+                                }
+                              } else if ($2.t == T_ENTERO) {
+                                if ($1 == EDIF || $1 == ESUM)
+                                {
+                                  int desp = creaVarTemp();
+                                  if ($1 == EDIF)
+                                    emite(ESIG, crArgPos(niv, $2.d), crArgNul(), crArgPos(niv, desp));
+                                  else
+                                    emite(EASIG, crArgPos(niv, $2.d), crArgNul(), crArgPos(niv, desp));
+                                  $$.t == $2.t;
+                                  $$.d == desp;
+                                } else {
+                                  yyerror("Operación incorrecta para tipo entero (unaria).");
+                                  $$.t = T_ERROR;
+                                }
+                              } else if ($2.t == T_ERROR) {
+                                $$.t = T_ERROR;                              
                               } else { 
-                                yyerror("No es de tipo lógico (unaria).");
-                                $$ = T_ERROR;
+                                yyerror("No es de tipo lógico o entero (unaria).");
+                                $$.t = T_ERROR;
                               }
                             }
                           ;
 
-          expresion_sufijo: constante { $$ = $1; }
+          expresion_sufijo: constante 
+                          { 
+                            $$.t = $1.t;
+                            int desp = creaVarTemp();
+                            emite(EASIG, crArgEnt($1.v), crArgNul(), crArgPos(niv, desp));
+                            $$.d = desp;
+                          }
                           | APAR_ expresion CPAR_ { $$ = $2; }
                           | ID_
                           {
                             SIMB infoVar = obtTdS($1);
-                            if (infoVar.t != T_ERROR) { $$ = infoVar.t; }
+                            if (infoVar.t != T_ERROR) { 
+                              $$.t = infoVar.t; 
+                              $$.d = infoVar.d;
+                            }
                             else {
                               yyerror("Variable no declarada.");
-                              $$ = T_ERROR;
+                              $$.t = T_ERROR;
                             }
                           }
                           | ID_ ACOR_ expresion CCOR_
@@ -390,20 +469,28 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                             if (infoVar.t == T_ERROR)
                             {
                               yyerror("Variable no declarada.");
-                              $$ = T_ERROR;
+                              $$.t = T_ERROR;
                             }
                             else if (infoVar.t != T_ARRAY)
                             {
                               yyerror("Variable de tipo incorrecto, se esperaba tipo array.");
-                              $$ = T_ERROR;
+                              $$.t = T_ERROR;
                             }
                             else if ($3 != T_ENTERO )
                             {
                               yyerror("Índice de tipo incorrecto, se esperaba tipo entero.");
-                              $$ = T_ERROR;
+                              $$.t = T_ERROR;
                             } else {
                               DIM infoArray = obtTdA(infoVar.ref);
-                              $$ = infoArray.telem;
+                              if ($3.d > infoArray.nelem - 1) {
+                                yyerror("Acceso fuera de límites del array.");
+                                $$.t = T_ERROR;
+                              } else {
+                                int desp = creaVarTemp();
+                                emite(EAV, crArgPos(niv, infoVar.d), crArgEnt($3.d * TALLA_TIPO_SIMPLE), crArgPos(niv, desp))
+                                $$.t = infoArray.telem;
+                                $$.d = desp;
+                              }
                             }    
                           }
                           | ID_ APAR_ parametros_actuales CPAR_
@@ -412,11 +499,11 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                             INF infoFunc = obtTdD(infoVar.ref);
                             if (infoVar.t == T_ERROR || infoFunc.tipo == T_ERROR) {
                               yyerror("Función no declarada.");
-                              $$ = T_ERROR;
+                              $$.t = T_ERROR;
                             } else if (!cmpDom(infoVar.ref, $3)) {
                               yyerror("Parámetros incorrectos.");
-                              $$ = T_ERROR;
-                            } else { $$ = infoVar.t; }
+                              $$.t = T_ERROR;
+                            } else { $$.t = infoVar.t; }
                           }
                           ;
 
@@ -428,31 +515,31 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                           | expresion COMA_ lista_parametros_actuales { $$ = insTdD($3, $1); }
                           ;
 
-           operador_logico: OPAND_
-                          | OPOR_
+           operador_logico: OPAND_ { $$ = EMULT; }
+                          | OPOR_  { $$ = ESUM;  }
                           ;
 
-         operador_igualdad: OPIGUALDAD_
-                          | OPDESIGUALDAD_
+         operador_igualdad: OPIGUALDAD_     { $$ = EIGUAL;}
+                          | OPDESIGUALDAD_  { $$ = EDIST; }
                           ;
 
-       operador_relacional: OPMAYOR_
-                          | OPMENOR_
-                          | OPMAYORIGUAL_
-                          | OPMENORIGUAL_
+       operador_relacional: OPMAYOR_      { $$ = EMAY;   }
+                          | OPMENOR_      { $$ = EMEN;   }
+                          | OPMAYORIGUAL_ { $$ = EMAYEQ; }
+                          | OPMENORIGUAL_ { $$ = EMENEQ; }
                           ;
 
-          operador_adicion: OPMAS_
-                          | OPMENOS_
+          operador_adicion: OPMAS_   { $$ = ESUM; }
+                          | OPMENOS_ { $$ = EDIF; }
                           ;
 
-   operador_multiplicativo: OPMUL_
-                          | OPDIV_
+   operador_multiplicativo: OPMUL_ { $$ = EMULT; }
+                          | OPDIV_ { $$ = EDIVI; }
                           ;
 
-           operador_unario: OPMAS_
-                          | OPMENOS_
-                          | OPNEGACION_
+           operador_unario: OPMAS_      { $$ = ESUM; }
+                          | OPMENOS_    { $$ = EDIF; }
+                          | OPNEGACION_ { $$ = EDIF; }
                           ;
 
 %%
