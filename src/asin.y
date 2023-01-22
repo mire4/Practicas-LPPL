@@ -59,6 +59,11 @@
                             dvar = 0;
                             niv = 0;
                             cargaContexto(niv);
+
+                            int numGlobalVars = creaLans(si);
+                            emite(INCTOP, crArgNul(), crArgNul(), crArgEnt(numGlobalVars));
+                            int mainDesp = creaLans(si);
+                            emite(GOTOS, crArgNul(), crArgNul(), crArgEtq(mainDesp));
                           }
                             lista_declaraciones
                           {
@@ -67,7 +72,11 @@
                             else if ($2 > 1)
                               yyerror("El programa tiene más de un main.");
                             else
-                              emite(FIN, crArgNul(), crArgNul(), crArgNul());
+                            {
+                              completaLans(numGlobalVars, crArgEnt(dvar));
+                              SIMB mainInfo = obtTdS("main");
+                              completaLans(mainDesp, crArgEtq(mainInfo.d));
+                            }
                           }
                           ;
 
@@ -171,13 +180,30 @@
                           }        
                           ;
 
-                    bloque: ALLAVE_ declaracion_variable_local lista_instrucciones RETURN_ expresion PCOMA_ 
+                    bloque: ALLAVE_ 
+                          {
+                            emite(PUSHFP, crArgNul(), crArgNul(), crArgNul());
+                            emite(FPTOP, crArgNul(), crArgNul(), crArgNul());
+                            int funDesp = creaLans(si);
+                            emite(INCTOP, crArgNul(), crArgNul(), crArgEnt(funDesp));
+                          }
+                            declaracion_variable_local lista_instrucciones RETURN_ expresion PCOMA_ CLLAVE_
                           {
                             INF infoFunc = obtTdD(-1);
                             if (infoFunc.tipo == T_ERROR) { yyerror("Error en la declaración de la función."); } 
-                            else if (infoFunc.tipo != $5.t) { yyerror("Tipo de retorno incorrecto."); }
+                            else if (infoFunc.tipo != $6.t) { yyerror("Tipo de retorno incorrecto."); }
+                            else {
+                              completaLans(funDesp, crArgEnt(dvar));
+                              emite(EASIG, crArgPos(niv, $6.d), crArgNul(), crArgPos(niv, -(TALLA_SEGENLACES + TALLA_TIPO_SIMPLE + infoFunc.tsp)));
+                              emite(TOPFP, crArgNul(), crArgNul(), crArgNul());
+                              emite(FPPOP, crArgNul(), crArgNul(), crArgNul());
+
+                              if (strcmp(infoFunc.nom, "main") == 0)
+                                emite(FIN, crArgNul(), crArgNul(), crArgNul());
+                              else
+                                emite(RET, crArgNul(), crArgNul(), crArgNul());
+                            }
                           }
-                          CLLAVE_
                           ;
 
 declaracion_variable_local: 
@@ -189,13 +215,13 @@ declaracion_variable_local:
                           ;
 
                instruccion: ALLAVE_ lista_instrucciones CLLAVE_
-                          | intruccion_expresion
+                          | instruccion_expresion
                           | instruccion_entrada_salida
                           | instruccion_seleccion
                           | instruccion_iteracion
                           ;
 
-      intruccion_expresion: expresion PCOMA_
+     instruccion_expresion: expresion PCOMA_
                           | PCOMA_
                           ;
 
@@ -206,6 +232,8 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                               yyerror("Variable sin declarar."); 
                             else if (infoVar.t != T_ENTERO)
                               yyerror("Variable diferente de entero.");
+                            else
+                              emite(EREAD, crArgNul(), crArgNul(), crArgPos(infoVar.d));
                           }
                           | PRINT_ APAR_ expresion CPAR_ PCOMA_
                           {
@@ -213,6 +241,8 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                               yyerror("Variable sin declarar."); 
                             else if ($3.t != T_ENTERO)
                               yyerror("Variable diferente de entero.");
+                            else
+                              emite(EWRITE, crArgNul(), crArgNul(), crArgPos($3.d));
                           }
                           ;
 
@@ -259,7 +289,8 @@ instruccion_entrada_salida: READ_ APAR_ ID_ CPAR_ PCOMA_
                             instruccion
                           {
                             // Comprobar que el for está bien?
-                            completaLans(forLans, crArgEtq(si));
+                            if ($3.t != T_ERROR && $5.t == T_LOGICO && $7.t != T_ERROR)
+                              completaLans(forLans, crArgEtq(si));
                           }
                           ;
 
